@@ -10,7 +10,7 @@ org 0x7c00
 
 %include "FAT12.inc"
 
-boot_start:
+
     ;Initialize the segment registers using the values in CS
     mov ax, cs
     mov ds, ax
@@ -41,15 +41,22 @@ boot_start:
     mov al, 01b 
     int 10h
 
-  
+    mov ax, loader_filename
+    call fat12_search_file_in_rootdir
 
-    jmp $
+
+
+    mov ebx, 0x10000
+    call fat12_load_file
+    jmp 0x1000:0
 
 ; ==================
 ;    Data part
 ; ==================
-    start_message db "Starting TinySYS...", CR, LF, 0
-    start_message_len equ ($ - start_message - 1)
+    start_message db "Starting TinySYS...", CR, LF
+    start_message_len equ ($ - start_message)
+
+    loader_filename  db "LOADER  BIN"
 
 
 
