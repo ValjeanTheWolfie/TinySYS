@@ -91,8 +91,7 @@ fat12_read_floppy_sector:
 
     jc .loop   ; Repeat until load success
 ;restore stack
-
-    add esp, 4
+    mov sp, bp
     pop bp
     ret
 
@@ -145,7 +144,7 @@ fat12_search_file_in_rootdir:
 ; No match
     xor ax, ax
 .return:
-    add esp, 2
+    mov sp, bp
     pop bp
     ret
 
@@ -167,14 +166,16 @@ fat12_get_next_fat12_cluster:
 
 ; BX = AX + (AX / 2) : covert FAT12 Entry index to addr
     mov bx, ax
-    shr ax, 1
+    mov cx, ax
+    shr bx, 1
     add bx, ax 
 
-    mov ax, [bx + FAT12ReadBufferAddr]
-    test bx, 1
-    jnz .odd
+    add bx, FAT12ReadBufferAddr
+    mov ax, [bx]
+    test cx, 1
+    jz .even
     shr ax, 4
-.odd:   ;even number is OK to fall through, because it doesn't change anything
+.even:   ;odd number is OK to fall through, because it doesn't change anything
     and ax, 0x0fff
     ret
 
@@ -189,11 +190,10 @@ fat12_load_file:
 ;prepare_stack:
     push bp
     mov bp, sp
-    sub esp, 4
+    sub esp, 6
+    mov word [bp - 6], ax
     mov dword [bp - 4], ebx
 .load_one_cluster:
-
-    push ax
     cmp ax, 0x0ff8
     jae .return
     
@@ -207,10 +207,12 @@ fat12_load_file:
     call fat12_read_floppy_sector
     add dword [bp - 4], FAT12SectorSize
 
-    pop ax
+    mov ax, [bp - 6]
     call fat12_get_next_fat12_cluster
+    mov word [bp - 6], ax
+    jmp .load_one_cluster
 .return:
-    add esp, 4
+    mov sp, bp
     pop bp
     ret
 

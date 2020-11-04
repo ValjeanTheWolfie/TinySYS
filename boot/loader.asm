@@ -7,6 +7,11 @@ org 0x10000
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+    ;Get cursor position
+    mov ah, 03h
+    mov bh, 00h
+    int 10h
     
     ; Print message
     mov bl, 0x07 
@@ -25,6 +30,8 @@ org 0x10000
 ; ==================
 ;    Data part
 ; ==================
+
+    times 512 db "ABCDEFGH"  ; Some garbage data to test if a file using multiple sectors can be loaded correctly
 
     start_message db "This is loader!!!!!!!!!!!!", CR, LF
     start_message_len equ ($ - start_message)
