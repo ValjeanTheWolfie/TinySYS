@@ -44,9 +44,9 @@ org 0x7c00
     mov ax, loader_filename
     call fat12_search_file_in_rootdir
 
-
-
-    mov ebx, 0x10000
+    mov bx, 0x1000
+    mov fs, bx
+    mov bx, 0x0000
     call fat12_load_file
     jmp 0x1000:0
 

@@ -56,10 +56,9 @@ db_char             db    0, 0
 
 ;--------------------------------------------
 ; Proc Name: fat12_read_floppy_sector
-; Function : Read floppy sector
+; Function : Read floppy sector to the FAT12 read buffer (0: FAT12ReadBufferAddr)
 ; Input    : AX    : start sector index
-;            ES:BX : read buffer address
-;            CL    : number of sectors to read
+;            BL    : number of sectors to read
 ; Output   : none
 ;---------------------------------------------
 fat12_read_floppy_sector:
@@ -68,12 +67,11 @@ fat12_read_floppy_sector:
     mov bp, sp
     sub esp, 4
     mov word [bp - 4], ax
-    mov byte [bp - 2], cl
+    mov byte [bp - 2], bl
 .loop:
 ; Covert LBA to CHS
 ; LBA = ((CylinderInd * HeadPerCylinder) + HeadInd) * SectorPerTrack + dw_SectorInd - 1
     mov ax, [bp - 4]
-    push bx
     mov bl, [BPB_SecPerTrk]
     div bl
     mov cl, ah
@@ -82,7 +80,9 @@ fat12_read_floppy_sector:
     and dh, 1
     mov ch, al
     shr ch, 1
-    pop bx
+    mov bx, 0
+    mov es, bx
+    mov bx, FAT12ReadBufferAddr
     mov dl, [BS_DrvNum]
 
     mov ah, 02h
@@ -114,10 +114,7 @@ fat12_search_file_in_rootdir:
 .load_one_sector:
 
     mov ax, [dw_SectorInd]
-    mov bx, 0
-    mov es, bx
-    mov bx, FAT12ReadBufferAddr
-    mov cl, 1 ;Load one sector
+    mov bl, 1 ;Load one sector
     call fat12_read_floppy_sector
 
     mov si, FAT12ReadBufferAddr
@@ -157,10 +154,7 @@ fat12_search_file_in_rootdir:
 fat12_get_next_fat12_cluster:
     push ax
     mov ax, FAT1StartSector
-    mov bx, FAT12ReadBufferAddr
-    mov cx, 0
-    mov es, cx
-    mov cl, 2
+    mov bl, 2
     call fat12_read_floppy_sector
     pop ax
 
@@ -183,7 +177,7 @@ fat12_get_next_fat12_cluster:
 ; Proc Name: fat12_load_file:
 ; Function : Load file to 
 ; Input    : AX    : The first data cluster index
-;            EBX   : Address to load to
+;            FS:EBX: Destination address to load
 ; Output   : none
 ;---------------------------------------------
 fat12_load_file:
@@ -191,25 +185,31 @@ fat12_load_file:
     push bp
     mov bp, sp
     sub esp, 6
-    mov word [bp - 6], ax
     mov dword [bp - 4], ebx
 .load_one_cluster:
+    mov word [bp - 6], ax
     cmp ax, 0x0ff8
     jae .return
     
     add ax, RootDirStartSector + RootDirSectorCnt - 2
-    mov ebx, [bp - 4]
-    mov ecx, ebx
-    shr ecx, 4
-    and cx, 0xF000
-    mov es, cx
-    mov cl, 1
+    mov bl, 1
     call fat12_read_floppy_sector
-    add dword [bp - 4], FAT12SectorSize
+
+    cld
+    mov eax, 0
+    mov ds, ax
+    mov si, FAT12ReadBufferAddr
+    mov ebx, [bp - 4]
+    mov ecx, FAT12SectorSize
+.copy_from_buffer_to_destination:
+    lodsb
+    mov byte [fs:ebx], al
+    inc ebx
+    loop .copy_from_buffer_to_destination
+    mov dword [bp - 4], ebx
 
     mov ax, [bp - 6]
     call fat12_get_next_fat12_cluster
-    mov word [bp - 6], ax
     jmp .load_one_cluster
 .return:
     mov sp, bp
