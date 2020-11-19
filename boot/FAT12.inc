@@ -44,8 +44,8 @@ RootDirSectorCnt    equ    14 ; = (BPB_BytesPerSec * 32 + (BPB_BytesPerSec - 1))
 RootDirStartSector  equ    19 ; = BPB_RsvdSecCnt + BPB_FATSz16 * BPB_NumFATs
 FAT1StartSector     equ    1  
 
-FAT12ReadBufferAddr equ    0x8000
-FAT12SectorSize     equ    512
+FAT12ReadBufferAddr equ    0x7000
+FAT12SectorSize     equ    512 ; i.e. BPB_BytesPerSec
 
 
 ;--------------------------------------------
@@ -58,12 +58,12 @@ FAT12SectorSize     equ    512
 fat12_read_floppy_sector:
     %define w_startSector     bp - 2
     %define b_readSectorsCnt  bp - 4
-    enter 6, 0
+    enter 4, 0
     mov word [w_startSector], ax
     mov byte [b_readSectorsCnt], bl
 .loop:
 ; Covert LBA to CHS
-; LBA = ((CylinderInd * HeadPerCylinder) + HeadInd) * SectorPerTrack + w_SectorInd - 1
+; LBA = ((CylinderInd * HeadPerCylinder) + HeadInd) * SectorPerTrack + SectorInd - 1
     mov ax, [w_startSector]
     mov bl, [BPB_SecPerTrk]
     div bl
@@ -96,14 +96,14 @@ fat12_read_floppy_sector:
 ;---------------------------------------------
 fat12_search_file_in_rootdir:
     %define w_filename    bp - 2
-    %define w_SectorInd   bp - 4
+    %define w_sectorInd   bp - 4
     enter 4, 0
     mov word [w_filename], ax
 ; Search from the first root dir sector
-    mov word [w_SectorInd], RootDirStartSector
+    mov word [w_sectorInd], RootDirStartSector
 .load_one_sector:
 
-    mov ax, [w_SectorInd]
+    mov ax, [w_sectorInd]
     mov bl, 1 ;Load one sector
     call fat12_read_floppy_sector
 
@@ -124,8 +124,8 @@ fat12_search_file_in_rootdir:
     add si, 0x20
     cmp si, FAT12ReadBufferAddr + FAT12SectorSize  ;Reach the sector end
     jb .compare_filename
-    add word [w_SectorInd], 1
-    cmp word [w_SectorInd], RootDirStartSector + RootDirSectorCnt
+    add word [w_sectorInd], 1
+    cmp word [w_sectorInd], RootDirStartSector + RootDirSectorCnt
     jb .load_one_sector
 ; No match
     xor ax, ax
@@ -203,7 +203,25 @@ fat12_load_file:
 .return:
     leave
     ret
-
+;--------------------------------------------
+; Proc Name: print
+; Function : print C-style string
+; Input    : DS:SI : String address
+; Output   : none
+;---------------------------------------------
+print:
+    pusha
+    mov ah, 0x0e
+    mov bx, 0x07
+.loop:
+    lodsb
+    cmp al, 0
+    jz .done
+    int 10h
+    jmp .loop
+.done:
+    popa
+    ret
 
 
 boot_start:

@@ -18,7 +18,7 @@ org 0x7c00
     mov fs, ax
     mov gs, ax
     ;Initialize the stack pointer register
-    mov sp, 0x7c00
+    mov sp, 0x7000
 
 
     ; Clear screen
@@ -33,16 +33,14 @@ org 0x7c00
     int 10h
 
     ; Print message
-    mov bl, 0x07 
-    mov cx, start_message_len
-    mov ax, start_message
-    mov bp, ax
-    mov ah, 13H
-    mov al, 01b 
-    int 10h
+    mov si, start_message
+    call print
+
 
     mov ax, loader_filename
     call fat12_search_file_in_rootdir
+    cmp ax, 0
+    jz loader_not_found
 
     mov bx, 0x1000
     mov fs, bx
@@ -50,11 +48,16 @@ org 0x7c00
     call fat12_load_file
     jmp 0x1000:0
 
+loader_not_found:
+    mov si, loader_not_found_message
+    call print
+    jmp $
+
 ; ==================
 ;    Data part
 ; ==================
-    start_message db "Starting TinySYS...", CR, LF
-    start_message_len equ ($ - start_message)
+    start_message db "Starting TinySYS...", CR, LF, 0
+    loader_not_found_message db "loader.bin not found. System halt.", CR, LF, 0
 
     loader_filename  db "LOADER  BIN"
 
