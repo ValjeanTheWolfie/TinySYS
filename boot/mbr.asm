@@ -59,7 +59,7 @@ loader_not_found:
 ; ==================
     message_start            db "Welcome!", CR, LF, 0
     message_loader           db "Starting loader",0
-    message_loader_not_found db "Loader.bin is missing!", 0
+    message_loader_not_found db "LOADER.BIN is missing!", 0
 
     loader_filename  db "LOADER  BIN"
 

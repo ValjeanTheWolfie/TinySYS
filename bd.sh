@@ -1,15 +1,14 @@
-rm -f build/*.bin
-echo "times 512*50 db 0" > empty.asm
-nasm empty.asm -o empty.bin
-dd if=empty.bin of=build/fd144.img bs=$[512*50] count=1 conv=notrunc 
-rm empty*
+nasm boot/loader.asm -i boot/ -o build/loader.bin
 
-nasm boot/mbr.asm -i boot/ -o build/mbr.bin 
-dd if=build/mbr.bin of=build/fd144.img bs=512 count=1 conv=notrunc 
-nasm boot/loader.asm -i boot/ -o build/loader.bin 
-mount build/fd144.img /media/ -t vfat -o loop 
-ls -al /media
-cp build/loader.bin /media/ 
+if [ ! -d fd144 ]
+then
+    mkdir fd144
+fi
+
+mount build/fd144.img fd144/ -t vfat -o loop 
+rm -rf fd144/*
+ls -al fd144/
+cp build/loader.bin fd144/ 
 sync 
-ls -al /media
-umount /media/
+ls -al fd144/
+umount fd144/
