@@ -1,15 +1,10 @@
 %include "boot.inc"
 org 0x10000
 
-%include "FAT12.inc"
-
-
-    ;Initialize the segment registers using the values in CS
+loader_start:
+    ;Initialize segment register DS
     mov ax, cs
     mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
 
 
     mov si, message_enter_loader
@@ -44,8 +39,13 @@ org 0x10000
     mov ax, kernel_filename
     call fat12_search_file_in_rootdir
     cmp ax, 0
-    jz file_not_found
+    jnz .found_kernel
 
+    mov si, message_file_not_found
+    call fat12_print
+    jmp $
+
+.found_kernel:
     mov si, message_load_kernel
     call fat12_print
 
@@ -57,10 +57,6 @@ org 0x10000
 
     jmp $
 
-file_not_found:
-    mov si, message_file_not_found
-    call fat12_print
-    jmp $
 
 
 ; ==================
@@ -91,13 +87,15 @@ file_not_found:
     Selector64_Data  equ  Gdt64EntData - Gdt64
 
 
-[SECTION texts]
+[SECTION text]
     kernel_filename  db "KERNEL  BIN"
 
     message_enter_loader    db "Loader start!", CR, LF, 0
-    message_in_unreal_mode  db "Switched unreal mode.", CR, LF, 0
+    message_in_unreal_mode  db "Switched to unreal mode.", CR, LF, 0
     message_load_kernel     db "Loading kernel", 0
     message_done            db "Done!!", CR, LF, 0
     message_file_not_found  db "KERNEL.BIN not found!!! System halt.", CR, LF, 0
 
 
+[SECTION FAT12]
+%include "FAT12.inc"

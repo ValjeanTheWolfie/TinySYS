@@ -40,13 +40,12 @@
 ;==========================================
 
 ; Definitions
+FAT12SectorSize     equ    512 ; i.e. BPB_BytesPerSec
 RootDirSectorCnt    equ    14 ; = (BPB_BytesPerSec * 32 + (BPB_BytesPerSec - 1)) / BPB_BytesPerSec
 RootDirStartSector  equ    19 ; = BPB_RsvdSecCnt + BPB_FATSz16 * BPB_NumFATs
 FAT1StartSector     equ    1  
-FAT12SectorSize     equ    512 ; i.e. BPB_BytesPerSec
 
-FAT12CommonBufferAddr     equ    0x7400
-FAT12FatTableBufferAddr   equ    0x7000
+FAT12ReadBufferAddr   equ    0x7000
 
 
 ;--------------------------------------------
@@ -107,25 +106,25 @@ fat12_search_file_in_rootdir:
     mov word [w_sectorInd], RootDirStartSector
 .load_one_sector:
     mov ax, [w_sectorInd]
-    mov bx, FAT12CommonBufferAddr
+    mov bx, FAT12ReadBufferAddr
     mov cl, 1 ;Load one sector
     call fat12_read_floppy_sector
 
-    mov si, FAT12FatTableBufferAddr
+    mov di, FAT12ReadBufferAddr
     cld
 .compare_filename:
-    mov di, [w_filename]
+    mov si, [w_filename]
     mov cx, 11
     repe cmpsb
     jne .compare_next_dir_entry 
 ; Found match
-    and si, 0xFFF0
-    mov ax, [si + 0x1A]
+    and di, 0xFFF0
+    mov ax, [es: di + 0x1A]
     jmp .return
 .compare_next_dir_entry:
-    and si, 0xFFE0
-    add si, 0x20
-    cmp si, FAT12CommonBufferAddr + FAT12SectorSize  ;Reach the sector end
+    and di, 0xFFE0
+    add di, 0x20
+    cmp di, FAT12ReadBufferAddr + FAT12SectorSize  ;Reach the sector end
     jb .compare_filename
     add word [w_sectorInd], 1
     cmp word [w_sectorInd], RootDirStartSector + RootDirSectorCnt
@@ -143,8 +142,6 @@ fat12_search_file_in_rootdir:
 ; Input    : AX    : Data cluster index
 ; Output   : AX    : Next data cluster index
 ;---------------------------------------------
-w_loadedFatTableInd dw -1
-
 fat12_get_next_fat12_cluster:
     %define w_clusterInd    bp - 2
     %define w_clusterAddr   bp - 4
@@ -161,20 +158,15 @@ fat12_get_next_fat12_cluster:
     mov bx, FAT12SectorSize
     div bx
     mov word [w_clusterAddr], dx
-    cmp ax, word [w_loadedFatTableInd]
-    je .fat_table_loaded
-
-    mov word [w_loadedFatTableInd], ax
     mov dx, ax
     add ax, FAT1StartSector
-    mov bx, FAT12FatTableBufferAddr
+    mov bx, FAT12ReadBufferAddr
     mov cl, 2
     call fat12_read_floppy_sector
 
-.fat_table_loaded:
     mov bx, [w_clusterAddr]
-    add bx, FAT12FatTableBufferAddr
-    mov ax, [bx]
+    add bx, FAT12ReadBufferAddr
+    mov ax, [es: bx]
     test word [w_clusterInd], 1
     jz .even
     shr ax, 4
@@ -197,7 +189,7 @@ fat12_load_file:
     %define w_cluster    bp - 2
     %define dw_destAddr  bp - 6
     enter 6, 0
-    mov word [w_filename], ax
+    mov word [w_cluster], ax
     mov dword [dw_destAddr], ebx
 .load_one_cluster:
     mov si, loading_file_message
@@ -208,20 +200,21 @@ fat12_load_file:
     jae .return
     
     add ax, RootDirStartSector + RootDirSectorCnt - 2
-    mov bx, FAT12CommonBufferAddr
+    mov bx, FAT12ReadBufferAddr
     mov cl, 1
     call fat12_read_floppy_sector
 
     cld
     mov eax, 0
-    mov ds, ax
-    mov si, FAT12CommonBufferAddr
+    mov es, ax
+    mov si, FAT12ReadBufferAddr
     mov ebx, [dw_destAddr]
     mov ecx, FAT12SectorSize
 .copy_from_buffer_to_destination:
-    lodsb
+    mov al, [es:si]
     mov byte [fs:ebx], al
     inc ebx
+    inc si
     loop .copy_from_buffer_to_destination
     mov dword [dw_destAddr], ebx
 

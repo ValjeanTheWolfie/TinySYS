@@ -40,9 +40,6 @@ org 0x7c00
     cmp ax, 0
     jz loader_not_found
 
-    mov si, message_loader
-    call fat12_print
-
     mov bx, 0x1000
     mov fs, bx
     mov bx, 0x0000
@@ -57,13 +54,10 @@ loader_not_found:
 ; ==================
 ;    Data part
 ; ==================
-    message_start            db "Welcome!", CR, LF, 0
-    message_loader           db "Starting loader",0
-    message_loader_not_found db "LOADER.BIN is missing!", 0
+    message_start            db "Starting TinySYS", 0
+    message_loader_not_found db CR, LF, "Error! LOADER.BIN is missing!", 0
 
     loader_filename  db "LOADER  BIN"
-
-
 
 
     times 510 - ($ - $$)db 0 ;Padding data
