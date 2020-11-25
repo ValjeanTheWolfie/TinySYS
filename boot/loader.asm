@@ -34,8 +34,7 @@ loader_start:
     mov si, message_in_unreal_mode
     call fat12_print
 
-    ; Load kernel
-  
+load_kernel:
     mov ax, kernel_filename
     call fat12_search_file_in_rootdir
     cmp ax, 0
@@ -55,25 +54,133 @@ loader_start:
     mov si, message_done
     call fat12_print
 
+.kill_floppy_monitor:
+    mov dx, 0x03f2
+    mov al, 0
+    out dx, al
+
+dectect_memory:
+    mov si, message_detecting_memory
+    call fat12_print
+
+    xor ebx, ebx
+    mov di, 0x7000
+.int_e820h:
+    mov si, message_wait_dot
+    call fat12_print
+
+    mov eax, 0xE820
+    mov ecx, 20
+    mov edx, 0x534D4150    ;'SMAP'
+    int 15h
+    jc .error
+    add di, 20
+    cmp ebx, 0
+    jnz .int_e820h
+    jmp .done
+.error:
+    mov si, message_detecting_memory_error
+    call fat12_print
+    jmp $
+.done:
+    mov si, message_done
+    call fat12_print
+
+goto_protected_mode:
+    call prepare_print_without_bios
+
+    cli
+    lgdt [Gdt32_Register]
+    lidt [Idt_Register]
+
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    jmp dword Selector32_Code: protected_mode_start
+
+[bits 32]
+protected_mode_start:
+    mov ax, Selector32_Data
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov ss, ax
+    mov esp, 0x7000
+    mov ax, Selector32_Video
+    mov gs, ax
+
+    mov esi, message_in_protected_mode
+    call print32
+
+check_IA32_mode_supported:
+; cpuid 80000000H 
+; EAX Maximum Input Value for Extended Function CPUID Information.
+; cpuid 80000001H 
+; EDX Bit 29: Intel® 64 Architecture available if 1.
+    mov eax, 0x80000000
+    cpuid
+    cmp eax, 0x80000001
+    jb .not_supported
+    mov eax, 0x80000001
+    cpuid
+    test edx, 1 << 29
+    jnz .supported
+.not_supported:
+    mov esi, message_not_support_ia32
+    call print32
+    jmp $
+.supported:
+    mov esi, message_support_ia32
+    call print32
+
+
+
+
     jmp $
 
 
+[SECTION FAT12]
+[bits 16]
+%include "FAT12.inc"
 
-; ==================
-;    Data part
-; ==================
+[SECTION text]
+    kernel_filename  db "KERNEL  BIN"
+
+    message_enter_loader            db "Loader start!", CR, LF, 0
+    message_in_unreal_mode          db "Switched to unreal mode.", CR, LF, 0
+    message_load_kernel             db "Loading kernel", 0
+    message_file_not_found          db "KERNEL.BIN not found!!! System halt.", CR, LF, 0
+    message_done                    db "Done!!", CR, LF, 0
+    message_detecting_memory        db "Dectecting memory", 0
+    message_detecting_memory_error  db "Error are encountered. System halt", CR, LF, 0
+    message_in_protected_mode       db "Entered protected mode!!", CR, LF, 0
+    message_support_ia32            db "CPU IA-32 test pass!!", CR, LF, 0
+    message_not_support_ia32        db "CPU doesn't support IA-32 mode. System halt!", CR, LF, 0
+    message_wait_dot                db ".", 0
+    message_endline                 db CR, LF, 0
+
+
 [SECTION descriptors]
 %include "descriptor.inc"
 
     Gdt32:          GDT32_ENTRY(0, 0, 0, 0)
     Gdt32EntCode:   GDT32_ENTRY(GDT_BASE_ADDR_ZERO, GDT_LIMIT_UNLIMITED, GDT_ACCESS_BYTE_CODE, GDT_FLAGS_4K_32)
     Gdt32EntData:   GDT32_ENTRY(GDT_BASE_ADDR_ZERO, GDT_LIMIT_UNLIMITED, GDT_ACCESS_BYTE_DATA, GDT_FLAGS_4K_32)
+    Gdt32EntVideo:  GDT32_ENTRY(0xb8000, GDT_LIMIT_UNLIMITED, GDT_ACCESS_BYTE_DATA, GDT_FLAGS_4K_32)
 
     Gdt32Len equ $ - Gdt32
     Gdt32_Register dw Gdt32Len - 1
                    dd Gdt32
     Selector32_Code  equ  Gdt32EntCode - Gdt32
     Selector32_Data  equ  Gdt32EntData - Gdt32
+    Selector32_Video equ  Gdt32EntVideo - Gdt32
+
+    Idt:            times 0x50 dq 0
+    
+    IdtLen equ $ - Idt
+    Idt_Register  dw IdtLen - 1
+                  dd Idt
 
 
     Gdt64:          GDT64_ENTRY(0, 0)
@@ -87,15 +194,87 @@ loader_start:
     Selector64_Data  equ  Gdt64EntData - Gdt64
 
 
-[SECTION text]
-    kernel_filename  db "KERNEL  BIN"
+[SECTION print32]
 
-    message_enter_loader    db "Loader start!", CR, LF, 0
-    message_in_unreal_mode  db "Switched to unreal mode.", CR, LF, 0
-    message_load_kernel     db "Loading kernel", 0
-    message_done            db "Done!!", CR, LF, 0
-    message_file_not_found  db "KERNEL.BIN not found!!! System halt.", CR, LF, 0
+DefaulPrintColor     equ 0x07     ; white
+VideoMemPerLine      equ 160      ; 80 char/line * 2 byte/char
+
+dw_CursorPos    dw 0                        ; cursor position
+
+; ----------------------------------------------------------
+;  Proc Name: prepare_print_without_bios
+;  Function : As its name is
+; ----------------------------------------------------------
+[bits 16]
+prepare_print_without_bios:
+    ; Save cursor position
+    ; (BIOS interrupt INT 10H / AH=03H: Read Cursor Position)
+    ; (Return: DH = Y coordinate  DL =  X coordinate        )
+    mov ah, 03h
+    mov bh, 00h
+    int 10h
+
+    ; Covert to video memory offset
+    xor eax, eax
+    mov al, dh
+    mov bl, 80   ; 80 char/line
+    mul bl
+    movzx bx, dl
+    add ax, bx
+    shl eax, 1  ; 2 byte/char
+    mov dword [dw_CursorPos], eax
+
+    ; Disable the cursor (BIOS interrupt INT 10H / AH=01H: Set Cursor Type)
+    mov ah, 01h
+    mov ch, 0010_0000b  ; bit5 set: no cursor
+    int 10h
+
+    ret
+
+; ----------------------------------------------------------
+;  Proc Name: print32
+;  Function : Print a C-style string (ended with '\0').
+;  Input    : ESI - the address of the string
+;  Output   : void
+; ----------------------------------------------------------
+[bits 32]
+print32:
+    pusha
+    mov ebx, [dw_CursorPos]
+.loop:
+    lodsb
+    cmp al, 0
+    jz .end
+    call .putchar32
+    jmp .loop
+.end:
+    mov dword [dw_CursorPos], ebx
+    popa
+    ret
+.putchar32:
+; SubProc: Print a char to the screen and update EBX
+; Input  : AL - char   EBX - cursor position
+; Output : EBX - updated cursor position
+    cmp al, CR
+    je .is_cr
+    cmp al, LF
+    je .is_lf
+    mov byte [gs:ebx], al
+    inc ebx
+    mov byte [gs:ebx], DefaulPrintColor
+    inc ebx
+    ret
+.is_cr:
+    mov edx, 0
+    mov ecx, VideoMemPerLine
+    mov eax, ebx
+    div ecx
+    sub ebx, edx
+    ret
+.is_lf:
+    add ebx, VideoMemPerLine
+    ret
 
 
-[SECTION FAT12]
-%include "FAT12.inc"
+
+
