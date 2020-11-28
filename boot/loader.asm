@@ -86,7 +86,7 @@ dectect_memory:
     mov si, message_done
     call fat12_print
 
-goto_protected_mode:
+go_to_protected_mode:
     call prepare_print_without_bios
 
     cli
@@ -134,10 +134,66 @@ check_IA32_mode_supported:
     mov esi, message_support_ia32
     call print32
 
+prepare_page_table:
+    mov dword [0x90000], 0x91007
+    mov dword [0x90004], 0
+    mov dword [0x90800], 0x91007
+    mov dword [0x90804], 0
 
+    mov dword [0x91000], 0x92007
+    mov dword [0x91004], 0
 
+    mov dword [0x92000], 0x000083
+    mov dword [0x92004], 0
+    mov dword [0x92008], 0x200083
+    mov dword [0x9200c], 0
+    mov dword [0x92010], 0x400083
+    mov dword [0x92014], 0
+    mov dword [0x92018], 0x600083
+    mov dword [0x9201c], 0
+    mov dword [0x92020], 0x800083
+    mov dword [0x92024], 0
+    mov dword [0x92028], 0xa00083
+    mov dword [0x9202c], 0
+    mov dword [0x92030], 0xc00083
+    mov dword [0x92034], 0
+    mov dword [0x92038], 0xe00083
+    mov dword [0x9203c], 0
 
-    jmp $
+go_to_long_mode:
+    ; load GDT
+    lgdt [Gdt64_Register]
+    mov ax, Selector64_Data
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x7000
+
+    ; open PAE
+    mov eax, cr4
+    bts eax, 5
+    mov cr4, eax
+
+    ; load page table to cr3
+    mov eax, 0x90000
+    mov cr3, eax
+
+    ; enable long mode
+    mov ecx, 0xC0000080
+    rdmsr
+    bts eax, 8
+    wrmsr
+
+    ; open PE and paging
+    mov eax, cr0
+    bts eax, 0
+    bts eax, 31
+    mov cr0, eax
+
+    jmp Selector64_Code: 0x10_0000
+
 
 
 [SECTION FAT12]
@@ -155,8 +211,8 @@ check_IA32_mode_supported:
     message_detecting_memory        db "Dectecting memory", 0
     message_detecting_memory_error  db "Error are encountered. System halt", CR, LF, 0
     message_in_protected_mode       db "Entered protected mode!!", CR, LF, 0
-    message_support_ia32            db "CPU IA-32 test pass!!", CR, LF, 0
-    message_not_support_ia32        db "CPU doesn't support IA-32 mode. System halt!", CR, LF, 0
+    message_support_ia32            db "CPU support IA-32e(64 bit) mode.", CR, LF, 0
+    message_not_support_ia32        db "CPU doesn't support 64 bit mode. System halt!", CR, LF, 0
     message_wait_dot                db ".", 0
     message_endline                 db CR, LF, 0
 
