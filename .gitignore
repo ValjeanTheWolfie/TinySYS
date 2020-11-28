@@ -2,6 +2,9 @@ build/
 temp/
 .bochsrc
 
+# build files
+*.bin
+
 # Prerequisites
 *.d
 
