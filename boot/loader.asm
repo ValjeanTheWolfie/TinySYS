@@ -134,6 +134,10 @@ check_IA32_mode_supported:
     mov esi, message_support_ia32
     call print32
 
+    mov esi, message_go_to_long_mode
+    call print32
+
+
 prepare_page_table:
     mov dword [0x90000], 0x91007
     mov dword [0x90004], 0
@@ -213,6 +217,7 @@ go_to_long_mode:
     message_in_protected_mode       db "Entered protected mode!!", CR, LF, 0
     message_support_ia32            db "CPU support IA-32e(64 bit) mode.", CR, LF, 0
     message_not_support_ia32        db "CPU doesn't support 64 bit mode. System halt!", CR, LF, 0
+    message_go_to_long_mode         db "Switching to long mode...", CR, LF, 0
     message_wait_dot                db ".", 0
     message_endline                 db CR, LF, 0
 

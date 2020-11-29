@@ -1,9 +1,5 @@
-all: boot/loader.bin kernel/kernel.bin
-
-boot/loader.bin:
+all: 
 	make -C boot
-	
-kernel/kernel.bin:
 	make -C kernel
 
 install: boot/loader.bin kernel/kernel.bin
