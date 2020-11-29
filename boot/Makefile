@@ -1,4 +1,4 @@
-all: ../build/fd144.img 
+all: ../build/fd144.img loader.bin
 
 ../build/fd144.img: mbr.bin
 	rm $@
@@ -8,16 +8,5 @@ all: ../build/fd144.img
 %.bin: %.asm *.inc
 	nasm $< -o $@
 
-#loader.bin: loader.asm
-#	nasm $^ -o $@
-
-install: loader.bin
-	mkdir -p fd144
-	mount ../build/fd144.img fd144/ -t vfat -o loop 
-	cp -f loader.bin fd144/ 
-	sync 
-	umount fd144/
-	rmdir fd144
-
 clean:
-	rm -f *.bin fd144
+	rm -f *.bin
