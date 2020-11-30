@@ -11,5 +11,5 @@ install: boot/loader.bin kernel/kernel.bin
 	rmdir fd144
 
 clean:
-	rm -f boot/*.bin
-	rm -f kernel/*.bin
+	make -C boot clean
+	make -C kernel clean
