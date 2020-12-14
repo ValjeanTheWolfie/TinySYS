@@ -11,9 +11,8 @@ extern void showCursor();
 extern void hideCursor();
 extern void setPrintColor(unsigned char color);
 
-
-
-
+extern int printf(const char *fmt, ...);
+extern int sprintf(char * buf, const char *fmt, ...);
 
 
 

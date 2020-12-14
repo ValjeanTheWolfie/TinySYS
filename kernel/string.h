@@ -94,11 +94,34 @@ static inline unsigned long strlen(const char *s)
     return res;
 }
 
+static inline unsigned long strnlen(const char *s, unsigned long length)
+{
+    long d0;
+    register unsigned long res;
+    __asm__ __volatile__
+    (
+        "mov %2, %0 \n\t"
+        "jmp 2f\n"
+        "1: cmpb $0, (%0) \n\t"
+        "je 3f\n\t"
+        "inc %0\n"
+        "2: dec %1 \n\t"
+        "cmp $-1,%1 \n\t"
+        "jne 1b \n"
+        "3: sub %2,%0"
+        :"=a"(res), "=&d"(d0)
+        :"c"(s), "1"(length)
+    );
+
+    return res;
+}
+
+
 static inline char* strcpy(char *dest, const char *src)
 {
     long d0, d1, d2;
     __asm__ __volatile__
-	(
+    (
         "1: lodsb \n\t"
         "stosb \n\t"
         "testb %%al,%%al \n\t"
@@ -106,7 +129,7 @@ static inline char* strcpy(char *dest, const char *src)
         :"=&S"(d0), "=&D"(d1), "=&a"(d2)
         :"0"(src),"1"(dest) 
         :"memory"
-	);
+    );
     return dest;
 }
 
@@ -114,7 +137,7 @@ static inline char* strncpy(char * dest, const char *src, unsigned long length)
 {
     long d0, d1, d2, d3;
     __asm__ __volatile__
-	(
+    (
         "1: dec %2 \n\t"
         "js 2f \n\t"
         "lodsb \n\t"
@@ -126,7 +149,7 @@ static inline char* strncpy(char * dest, const char *src, unsigned long length)
         "2:"
         :"=&S"(d0), "=&D"(d1), "=&c"(d2), "=&a"(d3)
         :"0"(src),"1"(dest),"2"(length) : "memory"
-	);
+    );
 
     return dest;
 }
@@ -135,7 +158,7 @@ static inline char* strcat(char *dest, const char *src)
 {
     long d0, d1, d2, d3;
     __asm__ __volatile__
-	(
+    (
         "repne scasb \n\t"
         "dec %1\n"
         "1: \n\t"
@@ -146,7 +169,7 @@ static inline char* strcat(char *dest, const char *src)
         :"=&S"(d0), "=&D"(d1), "=&a"(d2), "=&c"(d3)
         :"0"(src), "1"(dest), "2"(0), "3"(0xffffffffffffffffUL)
         :"memory"
-	);
+    );
 
     return dest;
 }
@@ -155,7 +178,7 @@ static inline char* strncat(char *dest, const char *src, unsigned long length)
 {
     long d0, d1, d2, d3;
     __asm__ __volatile__
-	(
+    (
         "repne \n\t"
         "scasb \n\t"
         "dec %1 \n\t"
@@ -171,8 +194,8 @@ static inline char* strncat(char *dest, const char *src, unsigned long length)
         :"=&S"(d0), "=&D"(d1), "=&a"(d2), "=&c"(d3)
         :"g"(length), "0"(src), "1"(dest), "2"(0), "3"(0xffffffff)
         :"memory"
-	);
-	
+    );
+    
     return dest;
 }
 
@@ -195,7 +218,7 @@ static inline int strcmp(const char *str1,const char *str2)
         :"=a"(res), "=&S"(d0), "=&D"(d1)
         :"1"(str1), "2"(str2)
     );
-	
+    
     return res;
 }
 
