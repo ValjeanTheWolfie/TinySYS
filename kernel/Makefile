@@ -5,11 +5,11 @@ all: kernel.bin
 kernel.bin: kernel.elf
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary kernel.elf kernel.bin
 
-kernel.elf: main.o
+kernel.elf: main.o print.o
 	ld -b elf64-x86-64 -z muldefs -o $@ -T kernel.lds $^
 
 %.o: %.c *.h
-	gcc $(CFLAGS) $< -o $@
+	gcc $(CFLAGS) $< -c -o $@
 
 clean:
 	rm -f *.bin *.o *.elf

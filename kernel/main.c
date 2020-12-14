@@ -1,15 +1,19 @@
+#include "print.h"
+
 void _start(void)
 {
-    const char* msg = "Now we are in the kernel!!";
-    unsigned char* videoMemory = (unsigned char*) 0xffff8000000b8000;
-    const char *p;
-    unsigned char *mem = videoMemory + 160 * 9;
-    
-    for(p = msg; *p; p++)
-    {
-        *mem++ = *p;
-        *mem++ = 0x0c;
-    }
+    setCursorRes(80, 25);
+    moveCursor(0, 9);
+    setPrintColor(0x0c);
+
+    putline("Now we are in the kernel!!\n");
+    setPrintColor(0x07);
+    putline("ab123\r123\b\b\bPrint test pass!!\n");
+
+    for(int i = 0x2000000; i; i--);
+    scollScreen(3);
+    putline("3 lines scolled!");
+    showCursor();
 
     while(1);
 }
