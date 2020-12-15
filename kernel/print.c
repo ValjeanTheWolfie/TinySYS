@@ -13,18 +13,31 @@ typedef struct
 {
     int xPos, yPos;
     int xRes, yRes;
-    ScreenChar *videoMem;
+    int offset;    /* Quick access to xPos + yPos * xRes */
+    char shape;
+    unsigned char color;
     unsigned char printColor;
 } Cursor;
 
 
 static ScreenChar *const videoMemBase = (ScreenChar *const) 0xffff8000000b8000;
-static Cursor cursor;
+static Cursor cursor = 
+{
+    .xRes = 80,
+    .yRes = 25,
+    .shape = '_',
+    .printColor = 0x07,  // normal white
+    .color = 0x8f,       // bright white and blinking
+};
 static char buff[4096];
 
+static inline void drawChar(int offset, char c, unsigned char color)
+{
+    videoMemBase[offset].c = c;
+    videoMemBase[offset].color = color;
+}
 
-
-int putline(const char *str)
+int putstr(const char *str)
 {
     const char* p;
     for(p = str; *p; p++) putchar(*p);
@@ -38,18 +51,17 @@ void putchar(char c)
     {
         case '\n':
             cursor.yPos++;
-            cursor.videoMem += cursor.xRes;
+            cursor.offset += cursor.xRes;
         /* fall through: treat '\n' as '\r' + '\n' */
         case '\r':
-            cursor.videoMem -= cursor.xPos;
+            cursor.offset -= cursor.xPos;
             cursor.xPos = 0;
             break;
         case '\b':
-            cursor.videoMem->c = 0;
-            cursor.videoMem->color = 0;
-            if(cursor.videoMem > videoMemBase)
+            drawChar(cursor.offset, 0, 0);
+            if(cursor.offset > 0)
             {
-                cursor.videoMem--;
+                cursor.offset--;
             }
             cursor.xPos--;
             if(cursor.xPos < 0)
@@ -58,10 +70,13 @@ void putchar(char c)
                 cursor.xPos = 0;
             }
             break;
+        case '\t':
+            cursor.offset += (8 - (cursor.xPos % 8));
+            cursor.xPos += (8 - (cursor.xPos % 8));
+            break;
         default:
-            cursor.videoMem->c = c;
-            cursor.videoMem->color = cursor.printColor;
-            cursor.videoMem++; 
+            drawChar(cursor.offset, c, cursor.printColor);
+            cursor.offset++; 
             cursor.xPos++;
             break;
     }
@@ -89,7 +104,7 @@ void scollScreen(int lines)
     memset(videoMemBase + totalCnt - charCnt, 0, charCnt * sizeof(ScreenChar));
 
     cursor.yPos -= lines;
-    cursor.videoMem -= charCnt;
+    cursor.offset -= charCnt;
 }
 
 
@@ -97,7 +112,7 @@ void moveCursor(int xPos, int yPos)
 {
     cursor.xPos = xPos;
     cursor.yPos = yPos;
-    cursor.videoMem = videoMemBase + xPos + yPos * cursor.xRes;
+    cursor.offset = xPos + yPos * cursor.xRes;
 }
 
 void setCursorRes(int xRes, int yRes)
@@ -106,21 +121,38 @@ void setCursorRes(int xRes, int yRes)
     cursor.yRes = yRes;
 }
 
+void setCursorShape(char shape, unsigned char color)
+{
+    cursor.shape = shape;
+    cursor.color = color;
+}
+
 void showCursor()
 {
-    cursor.videoMem->color = 0x8f; // bright white and blinking
-    cursor.videoMem->c = '_';
+    drawChar(cursor.offset, cursor.shape, cursor.color);
 }
 
 void hideCursor()
 {
-    cursor.videoMem->color = 0;
-    cursor.videoMem->c = 0;
+    drawChar(cursor.offset, 0, 0);
 }
 
 void setPrintColor(unsigned char color)
 {
     cursor.printColor = color;
+}
+
+unsigned char getPrintColor()
+{
+    return cursor.printColor;
+}
+
+unsigned char getColorVal(int forecolor, int background, int bright, int blink)
+{
+    return ((blink & 1) << 7) 
+         | ((background & 0x07) << 4) 
+         | ((bright & 1) << 3) 
+         | (forecolor & 0x07);
 }
 
 #define isdigit(c) (((c) >= '0') && ((c) <= '9'))
@@ -388,7 +420,23 @@ int printf(const char *fmt, ...)
     vsprintf(buff, fmt, args);
     va_end(args);
 
-    return putline(buff);
+    return putstr(buff);
+}
+
+int color_printf(int forecolor, int background, int bright, const char *fmt, ...)
+{
+    va_list args;
+    unsigned char backup = cursor.printColor;
+    int i;
+    cursor.printColor = forecolor | (background << 4) | (bright << 3);
+
+    va_start(args, fmt);
+    vsprintf(buff, fmt, args);
+    i = putstr(buff);
+    va_end(args);
+
+    cursor.printColor = backup;
+    return i;
 }
 
 
