@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "print.h"
+#include "printk.h"
 #include "string.h"
 #include "lib.h"
 
@@ -412,7 +412,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 }
 
 
-int printf(const char *fmt, ...)
+int printk(const char *fmt, ...)
 {
     va_list args;
 
@@ -423,7 +423,7 @@ int printf(const char *fmt, ...)
     return putstr(buff);
 }
 
-int color_printf(int forecolor, int background, int bright, const char *fmt, ...)
+int color_printk(int forecolor, int background, int bright, const char *fmt, ...)
 {
     va_list args;
     unsigned char backup = cursor.printColor;

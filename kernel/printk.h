@@ -24,9 +24,9 @@ extern void hideCursor();
 extern void setPrintColor(unsigned char color);
 unsigned char getColorVal(int forecolor, int background, int bright, int blink);
 
-extern int printf(const char *fmt, ...);
+extern int printk(const char *fmt, ...);
+extern int color_printk(int forecolor, int background, int bright, const char *fmt, ...);
 extern int sprintf(char * buf, const char *fmt, ...);
-extern int color_printf(int forecolor, int background, int bright, const char *fmt, ...);
 
 
 

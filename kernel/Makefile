@@ -5,7 +5,7 @@ all: kernel.bin
 kernel.bin: kernel.elf
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary kernel.elf kernel.bin
 
-kernel.elf: main.o print.o
+kernel.elf: main.o printk.o
 	ld -b elf64-x86-64 -z muldefs -o $@ -T kernel.lds $^
 
 %.o: %.c *.h
