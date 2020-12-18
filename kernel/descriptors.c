@@ -16,7 +16,7 @@
 #define FLAGS_1B_16     0x0     /* 0000b */
 #define FLAGS_1B_32     0x4     /* 0100b */
 #define FLAGS_4K_16     0x8     /* 1000b */
-#define FLAGS_4K_32     0xe     /* 1100b */
+#define FLAGS_4K_32     0xc     /* 1100b */
 #define FLAGS_64        0x2     /* 0010b */
 
 #define SEG_DESC_32(base, limit, accessByte, flag)        \
@@ -40,10 +40,10 @@
 
 #define GATE_DESC_64_LOW(selector, offset, accessByte)    \
 (                                                         \
-    ( TO_UL(offset)     & 0x00ff)                |        \
-    ((TO_UL(selector)   & 0x00ff) << 16)         |        \
-    ((TO_UL(accessByte) & 0x00ff) << 40)         |        \
-    ((TO_UL(offset)     & 0xff00) << (48 - 16))           \
+    ( TO_UL(offset)     & 0x0000ffff)                |    \
+    ((TO_UL(selector)   & 0x000000ff) << 16)         |    \
+    ((TO_UL(accessByte) & 0x000000ff) << 40)         |    \
+    ((TO_UL(offset)     & 0xffff0000) << (48 - 16))       \
 )
 #define GATE_DESC_64_HIGH(offset)    (TO_UL(offset) >> 32)
 
@@ -78,5 +78,19 @@ void initTss()
     pTss->tssDesc32 = TSS_DESC_64_LOW(&tssTable, 0xfffff, ACCESS_BYTE_TSS64, FLAGS_64);
     pTss->baseHigh = TSS_DESC_64_HIGH(&tssTable);
 
-    __asm__ __volatile__ ("ltr %%ax"::"a"(Selector(SEG_TSS)));
+    __asm__ __volatile__ ("ltr %%ax\n\t"::"a"(Selector(SEG_TSS)));
+}
+
+extern void ignore_int();
+
+void initIdt()
+{
+    int i;
+    for(i = 0; i < 256; i++)
+    {
+        idtTable[i].gate32 = GATE_DESC_64_LOW(Selector(SEG_KERNEL_CODE), ignore_int, ACCESS_BYTE_TRAP);
+        idtTable[i].offsetHigh = GATE_DESC_64_HIGH(ignore_int);
+    }
+
+    __asm__ __volatile__ ("lidt %0\n\t"::"m"(idtPtr));
 }

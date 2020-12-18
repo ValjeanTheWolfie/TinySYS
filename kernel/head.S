@@ -16,3 +16,54 @@ _start:
     mov $0xffff800000080000, %rsp
 
     jmp main
+
+ignore_int_msg: 
+    .asciz "An fault or interrupt was occured and ignored.\n"
+.globl ignore_int
+ignore_int:
+    push %rax
+    push %rbx
+    push %rcx
+    push %rdx
+    push %rsi
+    push %rdi
+    push %rbp
+    push %r8
+    push %r9
+    push %r10
+    push %r11
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    mov %ds, %rax
+    push %rax
+    mov %es, %rax
+    push %rax
+
+    xor %rax, %rax
+    lea ignore_int_msg(%rip), %rdi
+    call printk
+
+1: jmp 1b
+
+    pop %rax
+    mov %rax, %es
+    pop %rax
+    mov %rax, %ds
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %r11
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rbp
+    pop %rdi
+    pop %rsi
+    pop %rdx
+    pop %rcx
+    pop %rbx
+    pop %rax
+    iretq

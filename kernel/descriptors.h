@@ -54,5 +54,6 @@ enum SegDescIndex
 
 
 extern void initTss();
+extern void initIdt();
 
 #endif
