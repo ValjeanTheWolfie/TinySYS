@@ -32,11 +32,27 @@ typedef struct
 } __attribute__((packed)) TSS64;
 
 extern SegDescriptor gtdTable[];
+extern TSS64 tssTable;
+extern GateDescriptor idtTable[256];
+
+enum SegDescIndex
+{
+    SEG_NULL = 0,
+    SEG_KERNEL_CODE,
+    SEG_KERNEL_RWDATA,
+    SEG_USER_CODE,
+    SEG_USER_RWDATA,
+    SEG_KERNEL_CODE_32,
+    SEG_KERNEL_RWDATA_32,
+    SEG_USER_CODE_32,
+    SEG_USER_RWDATA_32,
+    SEG_TSS,
+    SEG_RESERVED0,
+};
+
+#define Selector(segDescInd) ((unsigned short)(segDescInd) << 3)
 
 
-
-
-
-
+extern void initTss();
 
 #endif

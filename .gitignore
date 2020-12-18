@@ -22,6 +22,7 @@ temp/
 # Precompiled Headers
 *.gch
 *.pch
+*.s
 
 # Libraries
 *.lib
