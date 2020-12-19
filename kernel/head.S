@@ -8,6 +8,7 @@ _start:
     mov %ax, %es 
     mov %ax, %fs 
     mov %ax, %gs 
+    mov %ax, %ss
     lea 1f(%rip), %rax 
     pushq $0x08           /* Selector(SEG_KERNEL_CODE)  */
     pushq %rax 
@@ -19,6 +20,7 @@ _start:
 
 ignore_int_msg: 
     .asciz "An fault or interrupt was occured and ignored.\n"
+
 .globl ignore_int
 ignore_int:
     push %rax
