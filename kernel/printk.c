@@ -3,13 +3,13 @@
 #include "string.h"
 #include "lib.h"
 
-typedef struct
+typedef struct _ScreenChar
 {
     char c;
     unsigned char color;
 } ScreenChar;
 
-typedef struct
+typedef struct _Cursor
 {
     int xPos, yPos;
     int xRes, yRes;

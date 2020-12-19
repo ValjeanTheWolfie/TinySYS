@@ -4,23 +4,25 @@
 
 typedef unsigned long SegDescriptor;
 
-typedef struct {
+typedef struct _TssDescriptor
+{
     unsigned long tssDesc32;
     unsigned long baseHigh;
 } TssDescriptor;
 
-typedef struct {
+typedef struct _GateDescriptor
+{
     unsigned long gate32;
     unsigned long offsetHigh;
 } GateDescriptor;
 
-typedef struct 
+typedef struct _DescTablePtr 
 {
     unsigned short limit;
     void *address;
 } __attribute__((packed)) DescTablePtr;
 
-typedef struct
+typedef struct _TSS64
 {
     unsigned int reserved0;
     unsigned long rsp0, rsp1, rsp2;
