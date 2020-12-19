@@ -13,7 +13,6 @@ typedef struct _Cursor
 {
     int xPos, yPos;
     int xRes, yRes;
-    int offset;    /* Quick access to xPos + yPos * xRes */
     char shape;
     unsigned char color;
     unsigned char printColor;
@@ -31,8 +30,9 @@ static Cursor cursor =
 };
 static char buff[4096];
 
-static inline void drawChar(int offset, char c, unsigned char color)
+static inline void drawChar(char c, unsigned char color)
 {
+    int offset = cursor.xPos + cursor.xRes * cursor.yPos;
     videoMemBase[offset].c = c;
     videoMemBase[offset].color = color;
 }
@@ -51,18 +51,12 @@ void putchar(char c)
     {
         case '\n':
             cursor.yPos++;
-            cursor.offset += cursor.xRes;
         /* fall through: treat '\n' as '\r' + '\n' */
         case '\r':
-            cursor.offset -= cursor.xPos;
             cursor.xPos = 0;
             break;
         case '\b':
-            drawChar(cursor.offset, 0, 0);
-            if(cursor.offset > 0)
-            {
-                cursor.offset--;
-            }
+            drawChar(0, 0);
             cursor.xPos--;
             if(cursor.xPos < 0)
             {
@@ -71,12 +65,10 @@ void putchar(char c)
             }
             break;
         case '\t':
-            cursor.offset += (8 - (cursor.xPos % 8));
             cursor.xPos += (8 - (cursor.xPos % 8));
             break;
         default:
-            drawChar(cursor.offset, c, cursor.printColor);
-            cursor.offset++; 
+            drawChar(c, cursor.printColor);
             cursor.xPos++;
             break;
     }
@@ -104,7 +96,6 @@ void scollScreen(int lines)
     memset(videoMemBase + totalCnt - charCnt, 0, charCnt * sizeof(ScreenChar));
 
     cursor.yPos -= lines;
-    cursor.offset -= charCnt;
 }
 
 
@@ -112,7 +103,6 @@ void moveCursor(int xPos, int yPos)
 {
     cursor.xPos = xPos;
     cursor.yPos = yPos;
-    cursor.offset = xPos + yPos * cursor.xRes;
 }
 
 void setCursorRes(int xRes, int yRes)
@@ -129,12 +119,12 @@ void setCursorShape(char shape, unsigned char color)
 
 void showCursor()
 {
-    drawChar(cursor.offset, cursor.shape, cursor.color);
+    drawChar(cursor.shape, cursor.color);
 }
 
 void hideCursor()
 {
-    drawChar(cursor.offset, 0, 0);
+    drawChar(0, 0);
 }
 
 void setPrintColor(unsigned char color)
