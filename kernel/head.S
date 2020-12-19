@@ -2,7 +2,7 @@
 .globl _start
 _start:
     /* Load new GDT table */
-    lgdt gdtPtr(%rip)     /* gdtPtr is in descriptors.c  */
+    lgdt gdtPtr(%rip)     /* gdtPtr is in tables.c  */
     mov $0x10, %ax        /* Selector(SEG_KERNEL_RWDATA) */
     mov %ax, %ds 
     mov %ax, %es 
@@ -19,7 +19,7 @@ _start:
     jmp main
 
 ignore_int_msg: 
-    .asciz "An fault or interrupt was occured and ignored.\n"
+    .asciz "An fault or interrupt has occured and was ignored.\n"
 
 .globl ignore_int
 ignore_int:
@@ -47,7 +47,6 @@ ignore_int:
     lea ignore_int_msg(%rip), %rdi
     call printk
 
-1: jmp 1b
 
     pop %rax
     mov %rax, %es

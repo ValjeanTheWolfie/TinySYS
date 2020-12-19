@@ -1,5 +1,5 @@
 #include "printk.h"
-#include "descriptors.h"
+#include "trap.h"
 
 void main(void)
 {
@@ -12,8 +12,16 @@ void main(void)
     initIdt();
     initTss();
 
-    j = 0;
-    i /= j;
+    i = 1, j = 0, k = 10;
+    printk("i = %d, j = %d, k = %d\n", i, j, k);
+    k = i / j;
+    printk("After i / j: i = %d, j = %d, k = %d\n", i, j, k);
+
+    i = 0, j = 0, k = 10;
+    printk("i = %d, j = %d, k = %d\n", i, j, k);
+    k = i / j;
+    printk("After i / j: i = %d, j = %d, k = %d\n", i, j, k);
+
 
     while(1);
 }
