@@ -70,7 +70,8 @@ enum SegDescIndex
 
 #define ACCESS_BYTE_TSS64           0x89      /*  1_00_0_1001b  */
 #define ACCESS_BYTE_TRAP            0x8e      /*  1_00_0_1110b  */
-#define ACCESS_BYTE_INTERRUPT       0x8f      /*  1_00_0_1111b  */
+#define ACCESS_BYTE_INT_KERNEL      0x8f      /*  1_00_0_1111b  */
+#define ACCESS_BYTE_INT_USER        0xef      /*  1_11_0_1111b  */
 
 #define FLAGS_1B_16     0x0     /* 0000b */
 #define FLAGS_1B_32     0x4     /* 0100b */
