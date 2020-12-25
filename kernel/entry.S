@@ -4,37 +4,37 @@ name##:
 
 #define IDT_ENTRY_WITH_ERRCODE(vectorID, gateName)  \
 ENTRY(gateName)                                     \
-    pushq $vectorID## ;                              \
+    pushq $##vectorID;                              \
     jmp push_all;
 
 #define IDT_ENTRY(vectorID, gateName)    \
 ENTRY(gateName)                          \
     pushq $0;                            \
-    pushq $vectorID## ;                   \
+    pushq $##vectorID;                   \
     jmp push_all;
 
-IDT_ENTRY(0 , idt_ent_divide_error                    )
-IDT_ENTRY(1 , idt_ent_debug_exception                 )
-IDT_ENTRY(2 , idt_ent_nmi                             )
-IDT_ENTRY(3 , idt_ent_breakpoint                      )
-IDT_ENTRY(4 , idt_ent_overflow                        )
-IDT_ENTRY(5 , idt_ent_bound                           )
-IDT_ENTRY(6 , idt_ent_invalid_opcode                  )
-IDT_ENTRY(7 , idt_ent_device_not_available            )
-IDT_ENTRY_WITH_ERRCODE(8 , idt_ent_double_fault       )
-IDT_ENTRY(9 , idt_ent_coprocessor_segment_overrun     )
-IDT_ENTRY_WITH_ERRCODE(10, idt_ent_invalid_tss        )
-IDT_ENTRY_WITH_ERRCODE(11, idt_ent_segment_not_present)
-IDT_ENTRY_WITH_ERRCODE(12, idt_ent_stack_segment_fault)
-IDT_ENTRY_WITH_ERRCODE(13, idt_ent_general_protection )
-IDT_ENTRY_WITH_ERRCODE(14, idt_ent_page_fault         )
-/* IDT_ENTRY(15, (intel reserved. do not use.) */
-IDT_ENTRY(16, idt_ent_x87_fpu_floating_point_error    )
-IDT_ENTRY_WITH_ERRCODE(17, idt_ent_alignment_check    )
-IDT_ENTRY(18, idt_ent_machine_check                   )
-IDT_ENTRY(19, idt_ent_simd_floating_point_exception   )
-IDT_ENTRY(20, idt_ent_virtualization_exception        )
-IDT_ENTRY_WITH_ERRCODE(21, idt_ent_control_protection_exception)
+IDT_ENTRY             (0 , idt_ent_0 )
+IDT_ENTRY             (1 , idt_ent_1 )
+IDT_ENTRY             (2 , idt_ent_2 )
+IDT_ENTRY             (3 , idt_ent_3 )
+IDT_ENTRY             (4 , idt_ent_4 )
+IDT_ENTRY             (5 , idt_ent_5 )
+IDT_ENTRY             (6 , idt_ent_6 )
+IDT_ENTRY             (7 , idt_ent_7 )
+IDT_ENTRY_WITH_ERRCODE(8 , idt_ent_8 )
+IDT_ENTRY             (9 , idt_ent_9 )
+IDT_ENTRY_WITH_ERRCODE(10, idt_ent_10)
+IDT_ENTRY_WITH_ERRCODE(11, idt_ent_11)
+IDT_ENTRY_WITH_ERRCODE(12, idt_ent_12)
+IDT_ENTRY_WITH_ERRCODE(13, idt_ent_13)
+IDT_ENTRY_WITH_ERRCODE(14, idt_ent_14)
+/* IDT_ENTRY          (15, idt_ent_15)(intel reserved. do not use.) */
+IDT_ENTRY             (16, idt_ent_16)
+IDT_ENTRY_WITH_ERRCODE(17, idt_ent_17)
+IDT_ENTRY             (18, idt_ent_18)
+IDT_ENTRY             (19, idt_ent_19)
+IDT_ENTRY             (20, idt_ent_20)
+IDT_ENTRY_WITH_ERRCODE(21, idt_ent_21)
 
 
 /* 0x00 - 0x80 : rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14, r15 */
