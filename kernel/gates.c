@@ -2,6 +2,7 @@
 #include "gates.h"
 #include "lib.h"
 #include "printk.h"
+#include "entry.h"
 
 IdtInfo idtEntryInfo[] = {
     {idt_ent_0 , ACCESS_BYTE_TRAP_KERNEL, "[0] Divide Error",                               },
