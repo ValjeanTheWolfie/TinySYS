@@ -102,8 +102,8 @@ void initInterrupt()
     io_out8(0xa1, 0x01);
 
     /* OCW */
-    io_out8(0x21, 0x00);
-    io_out8(0xa1, 0x00);
+    io_out8(0x21, 0xfd);
+    io_out8(0xa1, 0xff);
 
     sti();
 }
@@ -175,12 +175,11 @@ void handleFault(int vectorID, unsigned long errorCode, unsigned long rip)
 
 void handleInterrupt(int vectorID)
 {
-    static int testCnt = 0;
-
-    color_printk(PRINT_GREEN, PRINT_BLACK, 1, "%s\n", idtEntryInfo[vectorID].printInfo);
+    int keycode;
+    keycode = io_in8(0x60);
+    color_printk(PRINT_GREEN, PRINT_BLACK, 1, "%s, Key code = %#04x\n", idtEntryInfo[vectorID].printInfo, keycode);
     io_out8(0x20, 0x20);
 
-    if(++testCnt > 10) notifyAndDie();
 }
 
 
