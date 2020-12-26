@@ -37,6 +37,23 @@ IDT_ENTRY             (20, idt_ent_20)
 IDT_ENTRY_WITH_ERRCODE(21, idt_ent_21)
 
 
+IDT_ENTRY(0x20, idt_ent_0x20)
+IDT_ENTRY(0x21, idt_ent_0x21)
+IDT_ENTRY(0x22, idt_ent_0x22)
+IDT_ENTRY(0x23, idt_ent_0x23)
+IDT_ENTRY(0x24, idt_ent_0x24)
+IDT_ENTRY(0x25, idt_ent_0x25)
+IDT_ENTRY(0x26, idt_ent_0x26)
+IDT_ENTRY(0x27, idt_ent_0x27)
+IDT_ENTRY(0x28, idt_ent_0x28)
+IDT_ENTRY(0x29, idt_ent_0x29)
+IDT_ENTRY(0x2a, idt_ent_0x2a)
+IDT_ENTRY(0x2b, idt_ent_0x2b)
+IDT_ENTRY(0x2c, idt_ent_0x2c)
+IDT_ENTRY(0x2d, idt_ent_0x2d)
+IDT_ENTRY(0x2e, idt_ent_0x2e)
+IDT_ENTRY(0x2f, idt_ent_0x2f)
+
 /* 0x00 - 0x80 : rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14, r15 */
 ERR_CODE = 0x88
 VEC_ID   = 0x90
@@ -92,7 +109,7 @@ pop_all:
     pop %rcx
     pop %rbx
     pop %rax
-    addq $0x10, %rsp
+    addq $0x10, %rsp /* Pop error code and vector ID */
     iretq
 
 

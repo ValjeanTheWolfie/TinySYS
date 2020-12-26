@@ -1,5 +1,5 @@
 #include "printk.h"
-#include "trap.h"
+#include "gates.h"
 #include "lib.h"
 
 void main(void)
@@ -10,21 +10,7 @@ void main(void)
     
     initIdt();
     initTss();
-
-    /*
-    i = 1, j = 0, k = 10;
-    printk("i = %d, j = %d, k = %d, calculating k = i / j\n", i, j, k);
-    k = i / j;
-    */
-
-
-    
-    i = * (int*) 0x1000000;
-
-    /*for(i = 0; i < 32; i++){
-        handleIdtCall(i, 255, 0x7c00);
-    }*/
-    
+    initInterrupt();
 
 
     die();
